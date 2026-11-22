@@ -1,5 +1,5 @@
 // SnapText service worker: app shell + OCR engine cached for offline use.
-const CACHE = 'snaptext-v1';
+const CACHE = 'snaptext-v2';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

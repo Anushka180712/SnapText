@@ -2,36 +2,37 @@
 
 Take a photo, keep only the text.
 
-SnapText is a small phone web app. You point your camera at something, it reads the text right on your phone, saves the text as a note, and throws the photo away. The photo is kept only when you switch on **Keep the photo too** for that capture (or **Always keep photos** in Settings).
+SnapText is a small phone web app. Tap the camera, take a photo, tap **Use Photo**, and the text lands in one big text box while the photo is thrown away. Take as many photos as you like: each one adds its text below the last, in order. The photo is kept only when you switch on **Keep the photo too** before shooting.
 
 **Open it:** https://anushka180712.github.io/SnapText/
 
 ## What it does
 
-- Big **Take photo** button that opens the camera. You can also pick an existing photo or screenshot.
-- Reads the text on the phone itself (Tesseract.js). Nothing is uploaded anywhere.
-- Saves each result as a note you can edit, copy, share, search, or delete.
-- Photos are not saved unless you ask, so your gallery and storage stay clean.
-- Works offline after the first use, and can be added to your home screen like an app.
-- Languages: English, Hindi, English + Hindi, and a few European languages (Settings).
+- One running text box. Every photo adds its text to the end; you can type, fix or delete anything in it.
+- Clean, readable text: broken lines are joined back into sentences, bullet lists stay as lists, stray symbols are dropped.
+- Shoot back-to-back: photos are read one after another in the background, a badge shows how many are waiting.
+- Photos are not saved unless **Keep the photo too** is on for that shot (or "Keep photos by default" in Settings).
+- **Copy all** copies the whole text (plus kept photos, for apps that accept them). **Share all** sends text and kept photos to any app, ChatGPT included. **Copy & open ChatGPT** copies and jumps to ChatGPT. **Clear all** empties everything, with Undo.
+- Text is read on the phone itself (Tesseract.js), nothing is uploaded. Works offline after the first use.
+- Languages: English, Hindi, English + Hindi, French, German, Spanish (Settings).
 
 ## Try it on your phone
 
 **Android (Chrome)**
 1. Open https://anushka180712.github.io/SnapText/ in Chrome.
 2. Tap the three dots (top right) and choose **Add to Home screen** or **Install app**.
-3. Open SnapText from your home screen and tap **Take photo**. Allow the camera if asked.
+3. Open SnapText from your home screen and tap the blue camera button. Allow the camera if asked.
 4. The first reading takes a little longer (it downloads the reader once, about 5 MB).
 
 **iPhone (Safari)**
 1. Open https://anushka180712.github.io/SnapText/ in Safari.
 2. Tap the **Share** button (square with an arrow), scroll down, tap **Add to Home Screen**, then **Add**.
-3. Open SnapText from your home screen and tap **Take photo**, then **Take Photo** in the menu.
-4. After the shot, tap **Use Photo**. The text appears and is saved.
+3. Open SnapText from your home screen and tap the blue camera button, then **Take Photo**.
+4. After the shot, tap **Use Photo**. The text appears in the box. Repeat for more photos.
 
 ## Notes
 
-- Notes are stored in the browser on that phone. Deleting the app or clearing browser data deletes them, so use **Settings → Download all as .txt** for a backup.
+- The text is stored in the browser on that phone until you tap Clear all. Clearing browser data also deletes it.
 - Photos taken through SnapText do not go to your gallery.
 - Best results: good light, text filling most of the frame, phone held flat.
 

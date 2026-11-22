@@ -2,398 +2,438 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>SnapText</title>
-<meta name="description" content="Take a photo, keep only the text.">
+<meta name="description" content="Take photos, keep only the text.">
 <meta name="theme-color" content="#1f6feb">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SnapText">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
-  --bg:#f6f7f9;--card:#ffffff;--text:#16181d;--muted:#5f6673;--line:#e3e6eb;
-  --accent:#1f6feb;--accent-ink:#ffffff;--danger:#c62828;--soft:#eef3fd;
+  --bg:#f4f6f9;--card:#ffffff;--text:#15171c;--muted:#626a78;--line:#e2e6ec;
+  --accent:#1f6feb;--accent-ink:#ffffff;--danger:#d93025;--soft:#eaf1fe;--shadow:0 6px 24px rgba(20,30,50,.10);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0f1115;--card:#181b21;--text:#e9ecf1;--muted:#9aa3b2;--line:#2a2f38;
-    --accent:#4c8dff;--accent-ink:#0b0d10;--danger:#ff6b6b;--soft:#1b2433;
+    --bg:#0e1014;--card:#171a20;--text:#e8ebf0;--muted:#98a1b0;--line:#272c35;
+    --accent:#5b97ff;--accent-ink:#0a0c10;--danger:#ff6b61;--soft:#18243a;--shadow:0 6px 24px rgba(0,0,0,.45);
   }
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);-webkit-tap-highlight-color:transparent}
-.wrap{max-width:640px;margin:0 auto;padding:16px}
-header{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
-h1{font-size:22px;margin:0;letter-spacing:-.01em}
-h1 span{color:var(--accent)}
-.sub{color:var(--muted);font-size:14px;margin:2px 0 0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
-.big{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;
-  border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-size:19px;font-weight:600;padding:22px 12px;cursor:pointer}
-.big svg{width:30px;height:30px}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:10px 14px;font-size:15px;cursor:pointer;font-weight:500}
-.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.btn.danger{color:var(--danger)}
-.btn.small{padding:7px 11px;font-size:14px}
-.btn:disabled{opacity:.5}
-.ghost{width:100%;margin-top:10px}
-.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 2px;margin-top:12px;border-top:1px solid var(--line)}
-.toggle b{font-weight:600;display:block}
-.toggle small{color:var(--muted);font-size:13px}
-.sw{position:relative;width:52px;height:30px;flex:none}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column}
+button{font:inherit;color:inherit;cursor:pointer}
+.top{padding:calc(12px + env(safe-area-inset-top)) 16px 8px;display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:720px;width:100%;margin:0 auto}
+.brand{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.brand span{color:var(--accent)}
+.iconbtn{border:0;background:transparent;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.iconbtn:active{background:var(--line)}
+.iconbtn svg{width:22px;height:22px}
+main{flex:1;display:flex;flex-direction:column;min-height:0;max-width:720px;width:100%;margin:0 auto;padding:0 16px}
+.paper{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.paperhead{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--soft);color:var(--accent);border-radius:20px;padding:3px 10px;font-weight:600;font-size:12px}
+.chip.hidden{display:none}
+.spin{width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+textarea{flex:1;min-height:0;width:100%;border:0;outline:0;resize:none;padding:14px;background:transparent;color:var(--text);font:inherit;font-size:16px;line-height:1.6}
+textarea::placeholder{color:var(--muted)}
+.photos{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;border-top:1px solid var(--line)}
+.photos.hidden{display:none}
+.photos img{height:64px;width:64px;object-fit:cover;border-radius:10px;flex:none;border:1px solid var(--line)}
+.dock{position:sticky;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));max-width:720px;width:100%;margin:0 auto}
+.keep{display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;color:var(--muted);margin-bottom:10px;user-select:none}
+.keep b{color:var(--text);font-weight:600}
+.sw{position:relative;width:46px;height:27px;flex:none}
 .sw input{opacity:0;width:0;height:0;position:absolute}
 .sw i{position:absolute;inset:0;background:var(--line);border-radius:30px;transition:.2s}
-.sw i:before{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw i:before{content:"";position:absolute;left:3px;top:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .sw input:checked + i{background:var(--accent)}
-.sw input:checked + i:before{transform:translateX(22px)}
+.sw input:checked + i:before{transform:translateX(19px)}
 .sw input:focus-visible + i{outline:2px solid var(--accent);outline-offset:2px}
-select,input[type=search],textarea{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
-textarea{min-height:160px;resize:vertical;line-height:1.5}
-label.lbl{font-size:13px;color:var(--muted);display:block;margin:12px 0 6px}
-.progress{height:8px;background:var(--line);border-radius:8px;overflow:hidden;margin:10px 0 6px}
-.progress div{height:100%;width:0;background:var(--accent);transition:width .2s}
-.status{color:var(--muted);font-size:14px}
-.preview{width:100%;max-height:220px;object-fit:contain;border-radius:10px;background:var(--soft);margin-bottom:10px}
+.bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.act{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;font-weight:600}
+.act svg{width:22px;height:22px}
+.act:active{transform:scale(.97)}
+.act.danger{color:var(--danger)}
+.act:disabled{opacity:.45}
+.shutter{width:78px;height:78px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:var(--shadow);position:relative}
+.shutter svg{width:34px;height:34px}
+.shutter:active{transform:scale(.95)}
+.shutter .badge{position:absolute;top:-2px;right:-2px;min-width:22px;height:22px;border-radius:11px;background:var(--danger);color:#fff;font-size:12px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 6px}
+.shutter .badge.on{display:flex}
+.sub{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 18px;margin-top:10px}
+.link{border:0;background:none;color:var(--accent);font-size:14px;font-weight:600;padding:4px 2px}
 .hidden{display:none!important}
-.note{border-top:1px solid var(--line);padding:12px 0}
-.note:first-child{border-top:0;padding-top:4px}
-.note .meta{font-size:12px;color:var(--muted);margin-bottom:4px;display:flex;gap:8px;align-items:center}
-.note .txt{white-space:pre-wrap;word-break:break-word;max-height:7.5em;overflow:hidden;position:relative}
-.note.open .txt{max-height:none}
-.note img{width:72px;height:72px;object-fit:cover;border-radius:8px;float:right;margin:0 0 6px 10px;cursor:pointer}
-.note .acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;clear:both}
-.pill{background:var(--soft);color:var(--accent);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:600}
-.empty{color:var(--muted);text-align:center;padding:20px 0 8px;font-size:15px}
-h2{font-size:17px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);opacity:0;
-  background:var(--text);color:var(--bg);padding:10px 16px;border-radius:24px;font-size:14px;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.viewer{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px}
+.toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(10px);opacity:0;
+  background:var(--text);color:var(--bg);padding:10px 16px;border-radius:24px;font-size:14px;transition:.2s;pointer-events:none;display:flex;gap:14px;align-items:center;white-space:nowrap;z-index:20}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.toast button{border:0;background:none;color:var(--accent);font-weight:700;padding:0}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;z-index:30}
+.sheet .in{background:var(--card);width:100%;max-width:720px;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+.sheet h3{margin:0 0 12px;font-size:17px}
+.sheet label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+.sheet select{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+.sheet .row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+.sheet p{color:var(--muted);font-size:13px;margin:14px 0 0}
+.sheet .done{width:100%;margin-top:16px;border:0;border-radius:12px;padding:12px;background:var(--accent);color:var(--accent-ink);font-weight:600}
+.viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
 .viewer img{max-width:100%;max-height:100%}
-details summary{cursor:pointer;color:var(--muted);font-size:14px}
-.foot{color:var(--muted);font-size:12px;text-align:center;margin:8px 0 24px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>Snap<span>Text</span></h1>
-      <p class="sub">Take a photo, keep only the text.</p>
-    </div>
-  </header>
+<header class="top">
+  <div class="brand">Snap<span>Text</span></div>
+  <button class="iconbtn" id="settingsBtn" type="button" aria-label="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
 
-  <!-- Capture -->
-  <section class="card" id="captureCard">
-    <button class="big" id="snapBtn" type="button" aria-label="Take a photo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      Take photo
+<main>
+  <section class="paper">
+    <div class="paperhead">
+      <span id="stats">Empty</span>
+      <span class="chip hidden" id="working"><span class="spin"></span><span id="workingText">Reading…</span></span>
+    </div>
+    <textarea id="box" spellcheck="true" placeholder="Tap the camera and take a photo.&#10;&#10;The text appears here and the photo is thrown away. Every new photo adds its text below the last one. You can type, fix or delete anything here."></textarea>
+    <div class="photos hidden" id="photos" aria-label="Kept photos"></div>
+  </section>
+</main>
+
+<footer class="dock">
+  <label class="keep"><span>Keep the photo too</span><span class="sw"><input type="checkbox" id="keep"><i></i></span><b id="keepState">Off</b></label>
+  <div class="bar">
+    <button class="act" id="copyBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy all
     </button>
-    <button class="btn ghost" id="pickBtn" type="button">Or pick an existing photo / screenshot</button>
-    <input type="file" id="camInput" accept="image/*" capture="environment" class="hidden">
-    <input type="file" id="pickInput" accept="image/*" class="hidden">
+    <button class="shutter" id="snapBtn" type="button" aria-label="Take photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span class="badge" id="queueBadge">0</span>
+    </button>
+    <button class="act danger" id="clearBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      Clear all
+    </button>
+  </div>
+  <div class="sub">
+    <button class="link" id="pickBtn" type="button">From gallery</button>
+    <button class="link" id="shareBtn" type="button">Share all</button>
+    <button class="link" id="gptBtn" type="button">Copy &amp; open ChatGPT</button>
+  </div>
+  <input type="file" id="camInput" accept="image/*" capture="environment" class="hidden">
+  <input type="file" id="pickInput" accept="image/*" multiple class="hidden">
+</footer>
 
-    <div class="toggle">
-      <div><b>Keep the photo too</b><small id="keepHint">Off: only the text is saved, the photo is thrown away.</small></div>
-      <label class="sw"><input type="checkbox" id="keepToggle" aria-label="Keep the photo too"><i></i></label>
-    </div>
-  </section>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastAct" class="hidden" type="button">Undo</button></div>
 
-  <!-- Working / result -->
-  <section class="card hidden" id="workCard">
-    <img id="preview" class="preview" alt="Photo being read">
-    <div id="progressBox">
-      <div class="progress"><div id="bar"></div></div>
-      <div class="status" id="status">Starting…</div>
-    </div>
-    <div id="resultBox" class="hidden">
-      <label class="lbl" for="result">Text found (you can fix it before saving)</label>
-      <textarea id="result"></textarea>
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" id="copyBtn" type="button">Copy</button>
-        <button class="btn" id="shareBtn" type="button">Share</button>
-        <button class="btn" id="saveBtn" type="button">Save changes</button>
-        <button class="btn danger" id="discardBtn" type="button">Don't keep</button>
-      </div>
-      <div class="status" id="savedNote" style="margin-top:8px"></div>
-    </div>
-  </section>
-
-  <!-- Notes -->
-  <section class="card">
-    <h2>Saved text <span class="status" id="count"></span></h2>
-    <input type="search" id="search" placeholder="Search your notes" aria-label="Search your notes">
-    <div id="notes" style="margin-top:10px"></div>
-  </section>
-
-  <!-- Settings -->
-  <section class="card">
-    <details>
-      <summary>Settings</summary>
-      <label class="lbl" for="lang">Text language</label>
-      <select id="lang">
-        <option value="eng">English</option>
-        <option value="eng+hin">English + Hindi</option>
-        <option value="hin">Hindi</option>
-        <option value="eng+fra+deu+spa">English + European (FR, DE, ES)</option>
-      </select>
-      <div class="toggle">
-        <div><b>Always keep photos</b><small>Turns "Keep the photo too" on by default for every capture.</small></div>
-        <label class="sw"><input type="checkbox" id="alwaysKeep" aria-label="Always keep photos"><i></i></label>
-      </div>
-      <div class="row" style="margin-top:14px">
-        <button class="btn small" id="exportBtn" type="button">Download all as .txt</button>
-        <button class="btn small danger" id="clearBtn" type="button">Delete everything</button>
-      </div>
-      <p class="status" style="margin-top:12px">Everything stays on this phone. Text reading happens on the phone too; the first use downloads the reading engine (about 5 MB), after that it works offline.</p>
-    </details>
-  </section>
-  <p class="foot">SnapText · notes saved on this device only</p>
+<div class="sheet hidden" id="sheet">
+  <div class="in">
+    <h3>Settings</h3>
+    <label for="lang">Language of the text</label>
+    <select id="lang">
+      <option value="eng">English</option>
+      <option value="eng+hin">English + Hindi</option>
+      <option value="hin">Hindi</option>
+      <option value="eng+fra+deu+spa">English + French, German, Spanish</option>
+    </select>
+    <div class="row"><span>Keep photos by default</span><span class="sw"><input type="checkbox" id="alwaysKeep" aria-label="Keep photos by default"><i></i></span></div>
+    <div class="row"><span>Join broken lines into sentences</span><span class="sw"><input type="checkbox" id="joinLines" aria-label="Join broken lines into sentences"><i></i></span></div>
+    <p>Everything stays on this phone. The text is read on the phone itself; the first time it downloads the reader (about 5&nbsp;MB), after that it works offline. Photos taken here never go to your gallery.</p>
+    <button class="done" id="sheetDone" type="button">Done</button>
+  </div>
 </div>
-
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="viewer hidden" id="viewer"><img id="viewerImg" alt="Kept photo"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
+  const box = $('box');
 
-  // ---------- settings (small, per-device) ----------
+  // ---------- small prefs ----------
   const prefs = (() => {
-    let p = {};
-    try { p = JSON.parse(localStorage.getItem('snaptext.prefs') || '{}'); } catch (e) {}
-    return {
-      get: (k, d) => (k in p ? p[k] : d),
-      set: (k, v) => { p[k] = v; try { localStorage.setItem('snaptext.prefs', JSON.stringify(p)); } catch (e) {} }
-    };
+    let p = {}; try { p = JSON.parse(localStorage.getItem('snaptext.prefs') || '{}'); } catch (e) {}
+    return { get: (k, d) => (k in p ? p[k] : d), set: (k, v) => { p[k] = v; try { localStorage.setItem('snaptext.prefs', JSON.stringify(p)); } catch (e) {} } };
   })();
 
-  // ---------- storage: IndexedDB, falls back to memory ----------
-  const store = (() => {
-    let dbp = null, mem = [];
-    function open() {
-      if (dbp) return dbp;
-      dbp = new Promise((res) => {
-        try {
-          const r = indexedDB.open('snaptext', 1);
-          r.onupgradeneeded = () => r.result.createObjectStore('notes', { keyPath: 'id' });
-          r.onsuccess = () => res(r.result);
-          r.onerror = () => res(null);
-        } catch (e) { res(null); }
-      });
-      return dbp;
-    }
-    async function tx(mode, fn) {
-      const db = await open();
-      if (!db) return fn(null);
-      return new Promise((res, rej) => {
-        const t = db.transaction('notes', mode); const s = t.objectStore('notes');
-        let out; Promise.resolve(fn(s)).then(v => out = v);
-        t.oncomplete = () => res(out); t.onerror = () => rej(t.error);
-      });
-    }
+  // ---------- state saved in IndexedDB: { text, photos:[dataURL] } ----------
+  const db = (() => {
+    let dbp;
+    const open = () => dbp || (dbp = new Promise(res => {
+      try { const r = indexedDB.open('snaptext2', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); }
+      catch (e) { res(null); }
+    }));
     return {
-      async all() {
-        const db = await open();
-        if (!db) return mem.slice().sort((a, b) => b.created - a.created);
-        return new Promise((res) => {
-          const r = db.transaction('notes').objectStore('notes').getAll();
-          r.onsuccess = () => res(r.result.sort((a, b) => b.created - a.created));
-          r.onerror = () => res([]);
-        });
-      },
-      put(n) { return tx('readwrite', s => { if (s) s.put(n); else { mem = mem.filter(x => x.id !== n.id); mem.push(n); } }); },
-      del(id) { return tx('readwrite', s => { if (s) s.delete(id); else mem = mem.filter(x => x.id !== id); }); },
-      clear() { return tx('readwrite', s => { if (s) s.clear(); else mem = []; }); }
+      async get(k) { const d = await open(); if (!d) return undefined; return new Promise(res => { const r = d.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(undefined); }); },
+      async set(k, v) { const d = await open(); if (!d) return; return new Promise(res => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = res; }); }
     };
   })();
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
-  // ---------- ui helpers ----------
-  let toastT;
-  function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
-  async function copy(text) {
-    try { await navigator.clipboard.writeText(text); }
-    catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (_) {} ta.remove(); }
-    toast('Copied');
-  }
-  async function share(text) {
-    if (navigator.share) { try { await navigator.share({ text }); } catch (e) {} }
-    else copy(text);
-  }
-  const fmt = ts => new Date(ts).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  let photos = [];
+  let saveT;
+  const saveText = now => { clearTimeout(saveT); if (now === true) return db.set('text', box.value); saveT = setTimeout(() => db.set('text', box.value), 300); };
+  addEventListener('pagehide', () => db.set('text', box.value));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) db.set('text', box.value); });
+  const savePhotos = () => db.set('photos', photos);
 
-  // ---------- settings wiring ----------
-  const keepToggle = $('keepToggle'), alwaysKeep = $('alwaysKeep'), lang = $('lang');
+  // ---------- UI helpers ----------
+  let toastT, toastFn = null;
+  function toast(msg, actLabel, fn) {
+    $('toastMsg').textContent = msg; toastFn = fn || null;
+    $('toastAct').classList.toggle('hidden', !fn); if (actLabel) $('toastAct').textContent = actLabel;
+    $('toast').classList.add('show'); clearTimeout(toastT);
+    toastT = setTimeout(() => { $('toast').classList.remove('show'); toastFn = null; }, fn ? 5000 : 2000);
+  }
+  $('toastAct').onclick = () => { const f = toastFn; $('toast').classList.remove('show'); toastFn = null; if (f) f(); };
+
+  function updateStats() {
+    const t = box.value.trim();
+    const words = t ? t.split(/\s+/).length : 0;
+    const parts = [];
+    if (words) parts.push(words + (words === 1 ? ' word' : ' words'));
+    if (photos.length) parts.push(photos.length + (photos.length === 1 ? ' photo kept' : ' photos kept'));
+    $('stats').textContent = parts.length ? parts.join(' · ') : 'Empty';
+    const empty = !t && !photos.length;
+    $('copyBtn').disabled = empty; $('clearBtn').disabled = empty;
+  }
+  function renderPhotos() {
+    const el = $('photos'); el.innerHTML = '';
+    el.classList.toggle('hidden', !photos.length);
+    photos.forEach(src => {
+      const im = document.createElement('img'); im.src = src; im.alt = 'Kept photo';
+      im.onclick = () => { $('viewerImg').src = src; $('viewer').classList.remove('hidden'); };
+      el.appendChild(im);
+    });
+    updateStats();
+  }
+  $('viewer').onclick = () => $('viewer').classList.add('hidden');
+  box.addEventListener('input', () => { saveText(); updateStats(); });
+
+  // ---------- settings ----------
+  const keep = $('keep'), alwaysKeep = $('alwaysKeep'), joinLines = $('joinLines'), lang = $('lang');
   alwaysKeep.checked = prefs.get('alwaysKeep', false);
-  keepToggle.checked = alwaysKeep.checked;
+  joinLines.checked = prefs.get('joinLines', true);
   lang.value = prefs.get('lang', 'eng');
-  function keepHint() { $('keepHint').textContent = keepToggle.checked ? 'On: the photo is saved with its text.' : 'Off: only the text is saved, the photo is thrown away.'; }
-  keepHint();
-  keepToggle.onchange = keepHint;
-  alwaysKeep.onchange = () => { prefs.set('alwaysKeep', alwaysKeep.checked); keepToggle.checked = alwaysKeep.checked; keepHint(); };
-  lang.onchange = () => { prefs.set('lang', lang.value); worker = null; workerLang = null; };
+  keep.checked = alwaysKeep.checked;
+  const keepLabel = () => { $('keepState').textContent = keep.checked ? 'On' : 'Off'; };
+  keepLabel(); keep.onchange = keepLabel;
+  alwaysKeep.onchange = () => { prefs.set('alwaysKeep', alwaysKeep.checked); keep.checked = alwaysKeep.checked; keepLabel(); };
+  joinLines.onchange = () => prefs.set('joinLines', joinLines.checked);
+  lang.onchange = () => { prefs.set('lang', lang.value); resetWorker(); };
+  $('settingsBtn').onclick = () => $('sheet').classList.remove('hidden');
+  $('sheetDone').onclick = () => $('sheet').classList.add('hidden');
+  $('sheet').onclick = e => { if (e.target.id === 'sheet') $('sheet').classList.add('hidden'); };
 
-  // ---------- image prep: shrink big camera photos ----------
+  // ---------- OCR engine (warmed up at start so the first photo is quick) ----------
+  let workerP = null;
+  function getWorker() {
+    if (!workerP) {
+      if (!window.Tesseract) return Promise.reject(new Error('Reader not loaded. Connect to the internet once and reopen.'));
+      workerP = Tesseract.createWorker(lang.value, 1, {
+        logger: m => { if (m.status === 'recognizing text' && current) setWorking('Reading… ' + Math.round(m.progress * 100) + '%'); }
+      }).catch(e => { workerP = null; throw e; });
+    }
+    return workerP;
+  }
+  function resetWorker() { const p = workerP; workerP = null; if (p) p.then(w => w.terminate()).catch(() => {}); getWorker().catch(() => {}); }
+
+  // ---------- image prep ----------
   function loadImage(file) {
     return new Promise((res, rej) => {
       const url = URL.createObjectURL(file); const img = new Image();
-      img.onload = () => res({ img, url }); img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not open that image')); };
+      img.onload = () => { res(img); URL.revokeObjectURL(url); };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not open that photo')); };
       img.src = url;
     });
   }
-  function toCanvas(img, max) {
+  function draw(img, max, gray) {
     const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
     const c = document.createElement('canvas');
     c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
-    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const g = c.getContext('2d');
+    if (gray) g.filter = 'grayscale(1) contrast(1.25)';
+    g.drawImage(img, 0, 0, c.width, c.height);
     return c;
   }
 
-  // ---------- OCR ----------
-  let worker = null, workerLang = null, busy = false;
-  const setProg = (p, msg) => { $('bar').style.width = Math.round(p * 100) + '%'; if (msg) $('status').textContent = msg; };
-  async function getWorker() {
-    if (worker && workerLang === lang.value) return worker;
-    if (!window.Tesseract) throw new Error('The reading engine did not load. Check your internet for the first use.');
-    const w = await Tesseract.createWorker(lang.value, 1, {
-      logger: m => {
-        if (m.status === 'recognizing text') setProg(0.3 + m.progress * 0.7, 'Reading text… ' + Math.round(m.progress * 100) + '%');
-        else if (m.status && m.status.includes('load')) setProg(0.05 + (m.progress || 0) * 0.25, 'Preparing the reader (first time only)…');
-      }
+  // ---------- text cleanup: make OCR output read like Lens ----------
+  const looksJunk = (s, conf) => {
+    const t = s.trim(); if (!t) return true;
+    const letters = (t.match(/[\p{L}\p{N}]/gu) || []).length;
+    if (letters === 0) return true;
+    if (letters / t.length < 0.45 && t.length < 25) return true;  // mostly symbols
+    if (conf !== undefined && conf < 45 && t.length < 12) return true; // short, low-confidence noise
+    return false;
+  };
+  const tidy = s => s
+    .replace(/^[*·●▪◦]\s+/, '• ')
+    .replace(/[|¦]{1,}(?=\s|$)/g, '')
+    .replace(/[“”]/g, '"').replace(/[‘’]/g, "'")
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+  const isListLine = s => /^\s*([-•*·●▪◦]|\(?\d{1,3}[.)]|[a-zA-Z][.)])\s+/.test(s);
+
+  // lines: [{text, x0, x1}] ; a line is joined to the next only when it ran to the right edge (it was wrapped)
+  function joinParagraph(lines) {
+    if (!joinLines.checked) return lines.map(l => l.text).join('\n');
+    const left = Math.min(...lines.map(l => l.x0)), right = Math.max(...lines.map(l => l.x1));
+    const width = Math.max(1, right - left);
+    let out = '';
+    lines.forEach((ln, i) => {
+      if (i === 0) { out = ln.text; return; }
+      const prev = lines[i - 1];
+      const wrapped = prev.x1 >= right - width * 0.15 && (lines.length >= 3 || /^[a-z(,]/.test(ln.text));
+      const keepBreak = !wrapped || isListLine(ln.text) || /:$/.test(prev.text);
+      if (keepBreak) out += '\n' + ln.text;
+      else if (/[A-Za-z]-$/.test(out)) out = out.slice(0, -1) + ln.text;   // re-join hyphenated words
+      else out += ' ' + ln.text;
     });
-    worker = w; workerLang = lang.value;
-    return w;
+    return out;
   }
 
-  let current = null; // the note just made
+  function cleanFromBlocks(data) {
+    const paras = [];
+    (data.blocks || []).forEach(b => (b.paragraphs || []).forEach(p => {
+      const lines = [];
+      (p.lines || []).forEach(l => {
+        const words = (l.words || []).filter(w => w.confidence >= 30 || /[\p{L}\p{N}]{3,}/u.test(w.text) || /^[•*·●▪◦-]$/.test(w.text));
+        const text = tidy(words.map(w => w.text).join(' '));
+        const conf = words.length ? words.reduce((a, w) => a + w.confidence, 0) / words.length : 0;
+        if (!looksJunk(text, conf)) lines.push({ text, x0: l.bbox ? l.bbox.x0 : 0, x1: l.bbox ? l.bbox.x1 : 1 });
+      });
+      if (lines.length) paras.push({ text: joinParagraph(lines), single: lines.length === 1 });
+    }));
+    let out = '';
+    paras.forEach((p, i) => { out += i === 0 ? p.text : ((p.single && paras[i - 1].single) ? '\n' : '\n\n') + p.text; });
+    return out;
+  }
+  function cleanFromText(t) {
+    return (t || '').split(/\n\s*\n/).map(p => {
+      const lines = p.split('\n').map(tidy).filter(l => !looksJunk(l));
+      return lines.join('\n');
+    }).filter(Boolean).join('\n\n');
+  }
 
-  async function handleFile(file) {
-    if (!file || busy) return;
-    busy = true;
-    const keep = keepToggle.checked;
-    $('workCard').classList.remove('hidden');
-    $('resultBox').classList.add('hidden');
-    $('progressBox').classList.remove('hidden');
-    $('savedNote').textContent = '';
-    setProg(0.02, 'Opening photo…');
-    $('workCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    let loaded;
+  // ---------- capture queue: shoot as many as you like, read one after another ----------
+  const queue = []; let current = null;
+  function setWorking(msg) { $('workingText').textContent = msg; }
+  function refreshQueueUI() {
+    const n = queue.length + (current ? 1 : 0);
+    $('working').classList.toggle('hidden', !n);
+    const b = $('queueBadge'); b.textContent = n; b.classList.toggle('on', n > 1);
+    if (n > 1) setWorking('Reading ' + n + ' photos…'); else if (n === 1 && !/%/.test($('workingText').textContent)) setWorking('Reading…');
+  }
+
+  function appendText(t) {
+    const cur = box.value.replace(/\s+$/, '');
+    box.value = cur ? cur + '\n\n' + t : t;
+    saveText(true); updateStats();
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function pump() {
+    if (current || !queue.length) return;
+    current = queue.shift(); refreshQueueUI();
+    const { file, keepIt } = current;
     try {
-      loaded = await loadImage(file);
-      $('preview').src = loaded.url;
-      const canvas = toCanvas(loaded.img, 2200);
+      const img = await loadImage(file);
       const w = await getWorker();
-      setProg(0.3, 'Reading text…');
-      const { data } = await w.recognize(canvas);
-      const text = (data.text || '').replace(/\n{3,}/g, '\n\n').trim();
-
-      let image = null;
-      if (keep) image = toCanvas(loaded.img, 1600).toDataURL('image/jpeg', 0.82);
-
-      current = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created: Date.now(), text, image };
-      if (text || image) await store.put(current);
-
-      $('result').value = text;
-      $('progressBox').classList.add('hidden');
-      $('resultBox').classList.remove('hidden');
-      if (!text) $('savedNote').textContent = image ? 'No text found. The photo was kept.' : 'No text found in this photo, so nothing was saved. Try again closer, in good light.';
-      else $('savedNote').textContent = keep ? 'Saved with the photo.' : 'Saved. The photo was thrown away.';
-      if (!text && !image) current = null;
-      render();
+      const { data } = await w.recognize(draw(img, 2000, true), {}, { text: true, blocks: true });
+      let text = cleanFromBlocks(data);
+      if (!text) text = cleanFromText(data.text);
+      if (keepIt) { photos.push(draw(img, 1400, false).toDataURL('image/jpeg', 0.8)); savePhotos(); renderPhotos(); }
+      if (text) appendText(text);
+      else toast(keepIt ? 'No text found. Photo kept.' : 'No text found in that photo');
     } catch (e) {
-      $('status').textContent = (e && e.message) ? e.message : 'Something went wrong. Please try again.';
-      $('bar').style.width = '0';
+      toast((e && e.message) || 'Could not read that photo');
     } finally {
-      // the original photo is never stored; free it from memory
-      if (loaded && !keep) setTimeout(() => { URL.revokeObjectURL(loaded.url); }, 60000);
-      $('camInput').value = ''; $('pickInput').value = '';
-      keepToggle.checked = alwaysKeep.checked; keepHint();
-      busy = false;
+      current = null; refreshQueueUI(); pump();
     }
   }
-
+  function addFiles(files) {
+    const keepIt = keep.checked;
+    [...files].forEach(f => queue.push({ file: f, keepIt }));
+    keep.checked = alwaysKeep.checked; keepLabel();
+    refreshQueueUI(); pump();
+  }
   $('snapBtn').onclick = () => $('camInput').click();
   $('pickBtn').onclick = () => $('pickInput').click();
-  $('camInput').onchange = e => handleFile(e.target.files[0]);
-  $('pickInput').onchange = e => handleFile(e.target.files[0]);
+  $('camInput').onchange = e => { if (e.target.files.length) addFiles(e.target.files); e.target.value = ''; };
+  $('pickInput').onchange = e => { if (e.target.files.length) addFiles(e.target.files); e.target.value = ''; };
 
-  $('copyBtn').onclick = () => copy($('result').value);
-  $('shareBtn').onclick = () => share($('result').value);
-  $('saveBtn').onclick = async () => {
-    const text = $('result').value.trim();
-    if (!current) { if (!text) return; current = { id: Date.now().toString(36), created: Date.now(), text, image: null }; }
-    current.text = text; await store.put(current); render(); toast('Saved');
-  };
-  $('discardBtn').onclick = async () => {
-    if (current) await store.del(current.id);
-    current = null; $('workCard').classList.add('hidden'); render(); toast('Not kept');
-  };
+  // ---------- copy / share / clear ----------
+  const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  async function dataUrlToFile(u, i) { const b = await (await fetch(u)).blob(); return new File([b], 'snaptext-' + (i + 1) + '.jpg', { type: 'image/jpeg' }); }
 
-  // ---------- notes list ----------
-  let notes = [];
-  async function render() {
-    notes = await store.all();
-    const q = $('search').value.trim().toLowerCase();
-    const list = q ? notes.filter(n => (n.text || '').toLowerCase().includes(q)) : notes;
-    $('count').textContent = notes.length ? notes.length + (notes.length === 1 ? ' note' : ' notes') : '';
-    const box = $('notes'); box.innerHTML = '';
-    if (!list.length) {
-      box.innerHTML = '<div class="empty">' + (q ? 'Nothing matches.' : 'No text saved yet. Tap “Take photo” to start.') + '</div>';
-      return;
-    }
-    for (const n of list) {
-      const el = document.createElement('div'); el.className = 'note';
-      const meta = document.createElement('div'); meta.className = 'meta';
-      meta.textContent = fmt(n.created);
-      if (n.image) { const p = document.createElement('span'); p.className = 'pill'; p.textContent = 'photo kept'; meta.appendChild(p); }
-      el.appendChild(meta);
-      if (n.image) {
-        const im = document.createElement('img'); im.src = n.image; im.alt = 'Kept photo';
-        im.onclick = () => { $('viewerImg').src = n.image; $('viewer').classList.remove('hidden'); };
-        el.appendChild(im);
+  async function copyAll(quiet) {
+    const text = box.value.trim();
+    if (!text && !photos.length) return false;
+    try {
+      if (photos.length && window.ClipboardItem && navigator.clipboard.write) {
+        // Rich copy: text plus kept photos, for apps that accept pasted HTML (notes, docs, email).
+        const html = '<div>' + esc(text).replace(/\n/g, '<br>') + '</div>' + photos.map(p => '<p><img src="' + p + '" style="max-width:100%"></p>').join('');
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+          'text/html': new Blob([html], { type: 'text/html' })
+        })]);
+        if (!quiet) toast('Copied text and ' + photos.length + (photos.length === 1 ? ' photo' : ' photos'));
+      } else {
+        await navigator.clipboard.writeText(text);
+        if (!quiet) toast('Copied all text');
       }
-      const t = document.createElement('div'); t.className = 'txt'; t.textContent = n.text || '(no text)';
-      t.onclick = () => el.classList.toggle('open');
-      el.appendChild(t);
-      const acts = document.createElement('div'); acts.className = 'acts';
-      const mk = (label, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + cls; b.textContent = label; b.onclick = fn; acts.appendChild(b); };
-      mk('Copy', '', () => copy(n.text || ''));
-      mk('Share', '', () => share(n.text || ''));
-      if (n.image) mk('Remove photo', '', async () => { n.image = null; await store.put(n); render(); toast('Photo removed, text kept'); });
-      mk('Delete', 'danger', async () => { if (confirm('Delete this note?')) { await store.del(n.id); render(); } });
-      el.appendChild(acts);
-      box.appendChild(el);
+      return true;
+    } catch (e) {
+      box.focus(); box.select();
+      try { document.execCommand('copy'); if (!quiet) toast('Copied all text'); return true; } catch (_) {}
+      toast('Select the text and copy it manually'); return false;
     }
   }
-  $('search').oninput = render;
-  $('viewer').onclick = () => $('viewer').classList.add('hidden');
+  $('copyBtn').onclick = () => copyAll();
 
-  $('exportBtn').onclick = () => {
-    if (!notes.length) return toast('Nothing to download yet');
-    const body = notes.map(n => '— ' + new Date(n.created).toLocaleString() + ' —\n' + (n.text || '')).join('\n\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([body], { type: 'text/plain' }));
-    a.download = 'snaptext-notes.txt'; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  $('shareBtn').onclick = async () => {
+    const text = box.value.trim();
+    if (!text && !photos.length) return toast('Nothing to share yet');
+    if (!navigator.share) { await copyAll(); return; }
+    try {
+      const files = photos.length ? await Promise.all(photos.map(dataUrlToFile)) : [];
+      const payload = files.length && navigator.canShare && navigator.canShare({ files }) ? { text, files } : { text };
+      await navigator.share(payload);
+    } catch (e) { if (e && e.name !== 'AbortError') copyAll(); }
   };
-  $('clearBtn').onclick = async () => { if (confirm('Delete all saved notes and photos?')) { await store.clear(); render(); toast('All deleted'); } };
 
-  render();
+  $('gptBtn').onclick = async () => {
+    const ok = await copyAll(true);
+    if (ok) toast(photos.length ? 'Text copied. Paste it in ChatGPT (use Share all to send photos).' : 'Copied. Paste it in ChatGPT.');
+    setTimeout(() => { location.href = 'https://chatgpt.com/'; }, 600);
+  };
 
-  // ---------- offline support ----------
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
-  window.__snaptext = { handleFile, store };
+  $('clearBtn').onclick = () => {
+    const snap = { text: box.value, photos: photos.slice() };
+    if (!snap.text.trim() && !snap.photos.length) return;
+    box.value = ''; photos = []; saveText(true); savePhotos(); renderPhotos();
+    toast('Cleared', 'Undo', () => { box.value = snap.text; photos = snap.photos; saveText(true); savePhotos(); renderPhotos(); });
+  };
+
+  // ---------- start ----------
+  (async () => {
+    const [t, p] = await Promise.all([db.get('text'), db.get('photos')]);
+    if (typeof t === 'string' && !box.value) box.value = t;
+    if (Array.isArray(p)) photos = p;
+    renderPhotos();
+  })();
+  updateStats();
+  setTimeout(() => getWorker().catch(() => {}), 300);
+
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  window.__snaptext = { addFiles, get photos() { return photos; } };
 })();
 </script>
 </body>
