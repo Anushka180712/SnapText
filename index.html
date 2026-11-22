@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>SnapText</title>
 <meta name="description" content="Take photos, keep only the text.">
-<meta name="theme-color" content="#1f6feb">
+<meta name="theme-color" content="#fbf8f3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SnapText">
@@ -14,14 +14,10 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
-  --bg:#f4f6f9;--card:#ffffff;--text:#15171c;--muted:#626a78;--line:#e2e6ec;
-  --accent:#1f6feb;--accent-ink:#ffffff;--danger:#d93025;--soft:#eaf1fe;--shadow:0 6px 24px rgba(20,30,50,.10);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0e1014;--card:#171a20;--text:#e8ebf0;--muted:#98a1b0;--line:#272c35;
-    --accent:#5b97ff;--accent-ink:#0a0c10;--danger:#ff6b61;--soft:#18243a;--shadow:0 6px 24px rgba(0,0,0,.45);
-  }
+  color-scheme:light;
+  --bg:#fbf8f3;--card:#ffffff;--text:#2d2b28;--muted:#857e74;--line:#ede6da;
+  --accent:#2f9e68;--accent-ink:#ffffff;--danger:#e0564a;--soft:#e6f5ec;--sun:#f4b740;--sun-soft:#fff4dc;
+  --shadow:0 8px 24px rgba(47,158,104,.28);
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -33,6 +29,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 .brand span{color:var(--accent)}
 .iconbtn{border:0;background:transparent;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
 .iconbtn:active{background:var(--line)}
+.thumb{position:relative;flex:none}
+.thumb img{display:block}
+.thumb.recent img{opacity:.55;filter:saturate(.6)}
+.thumb .tag{position:absolute;left:4px;bottom:4px;font-size:10px;font-weight:700;border-radius:8px;padding:1px 6px;background:var(--sun);color:#3d2c00}
+.thumb.kept .tag{background:var(--accent);color:#fff}
+.photohead{font-size:12px;color:var(--muted);padding:8px 14px 0;border-top:1px solid var(--line)}
+.viewer{flex-direction:column;gap:14px}
+.viewer .vbtns{display:flex;gap:10px}
+.viewer .vbtns button{border:1px solid var(--line);border-radius:12px;padding:12px 18px;font-weight:600;background:#fff;color:#2d2b28}
+.viewer .vbtns button.keepit{background:var(--sun);color:#3d2c00}
 .iconbtn svg{width:22px;height:22px}
 main{flex:1;display:flex;flex-direction:column;min-height:0;max-width:720px;width:100%;margin:0 auto;padding:0 16px}
 .paper{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
@@ -43,7 +49,7 @@ main{flex:1;display:flex;flex-direction:column;min-height:0;max-width:720px;widt
 @keyframes sp{to{transform:rotate(360deg)}}
 textarea{flex:1;min-height:0;width:100%;border:0;outline:0;resize:none;padding:14px;background:transparent;color:var(--text);font:inherit;font-size:16px;line-height:1.6}
 textarea::placeholder{color:var(--muted)}
-.photos{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;border-top:1px solid var(--line)}
+.photos{display:flex;gap:8px;overflow-x:auto;padding:8px 14px 10px}
 .photos.hidden{display:none}
 .photos img{height:64px;width:64px;object-fit:cover;border-radius:10px;flex:none;border:1px solid var(--line)}
 .dock{position:sticky;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));max-width:720px;width:100%;margin:0 auto}
@@ -74,7 +80,7 @@ textarea::placeholder{color:var(--muted)}
   background:var(--text);color:var(--bg);padding:10px 16px;border-radius:24px;font-size:14px;transition:.2s;pointer-events:none;display:flex;gap:14px;align-items:center;white-space:nowrap;z-index:20}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 .toast button{border:0;background:none;color:var(--accent);font-weight:700;padding:0}
-.sheet{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;z-index:30}
+.sheet{position:fixed;inset:0;background:rgba(80,70,50,.18);display:flex;align-items:flex-end;justify-content:center;z-index:30}
 .sheet .in{background:var(--card);width:100%;max-width:720px;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
 .sheet h3{margin:0 0 12px;font-size:17px}
 .sheet label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
@@ -82,8 +88,8 @@ textarea::placeholder{color:var(--muted)}
 .sheet .row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
 .sheet p{color:var(--muted);font-size:13px;margin:14px 0 0}
 .sheet .done{width:100%;margin-top:16px;border:0;border-radius:12px;padding:12px;background:var(--accent);color:var(--accent-ink);font-weight:600}
-.viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
-.viewer img{max-width:100%;max-height:100%}
+.viewer{position:fixed;inset:0;background:rgba(251,248,243,.97);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
+.viewer img{max-width:100%;max-height:75vh;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12)}
 </style>
 </head>
 <body>
@@ -100,8 +106,9 @@ textarea::placeholder{color:var(--muted)}
       <span id="stats">Empty</span>
       <span class="chip hidden" id="working"><span class="spin"></span><span id="workingText">Reading…</span></span>
     </div>
-    <textarea id="box" spellcheck="true" placeholder="Tap the camera and take a photo.&#10;&#10;The text appears here and the photo is thrown away. Every new photo adds its text below the last one. With “Keep the photo too” on, the photo is kept instead and no text is added. You can type, fix or delete anything here."></textarea>
-    <div class="photos hidden" id="photos" aria-label="Kept photos"></div>
+    <textarea id="box" spellcheck="true" placeholder="Tap the camera and take a photo.&#10;&#10;The text appears here and the photo is thrown away. Every new photo adds its text below the last one. With “Keep the photo too” on, the photo is kept instead and no text is added. Changed your mind later? Tap a faded photo below to keep it. You can type, fix or delete anything here."></textarea>
+    <div class="photohead hidden" id="photohead">Photos · tap a faded one to keep it</div>
+    <div class="photos hidden" id="photos" aria-label="Photos"></div>
   </section>
 </main>
 
@@ -124,7 +131,6 @@ textarea::placeholder{color:var(--muted)}
   <div class="sub">
     <button class="link" id="pickBtn" type="button">From gallery</button>
     <button class="link" id="shareBtn" type="button">Share all</button>
-    <button class="link" id="gptBtn" type="button">Copy &amp; open ChatGPT</button>
   </div>
   <input type="file" id="camInput" accept="image/*" capture="environment" class="hidden">
   <input type="file" id="pickInput" accept="image/*" multiple class="hidden">
@@ -144,11 +150,11 @@ textarea::placeholder{color:var(--muted)}
     </select>
     <div class="row"><span>Keep photos by default</span><span class="sw"><input type="checkbox" id="alwaysKeep" aria-label="Keep photos by default"><i></i></span></div>
     <div class="row"><span>Join broken lines into sentences</span><span class="sw"><input type="checkbox" id="joinLines" aria-label="Join broken lines into sentences"><i></i></span></div>
-    <p>Everything stays on this phone. The text is read on the phone itself; the first time it downloads the reader (about 5&nbsp;MB), after that it works offline. Photos taken here never go to your gallery.</p>
+    <p>Everything stays on this phone. The text is read on the phone itself; the first time it downloads the reader (about 5&nbsp;MB), after that it works offline. Photos taken here never go to your gallery. Your last few photos are held for 24 hours (or until Clear all) in case you decide to keep one, then thrown away.</p>
     <button class="done" id="sheetDone" type="button">Done</button>
   </div>
 </div>
-<div class="viewer hidden" id="viewer"><img id="viewerImg" alt="Kept photo"></div>
+<div class="viewer hidden" id="viewer"><img id="viewerImg" alt="Photo"><div class="vbtns"><button type="button" id="vKeep" class="keepit">Keep this photo</button><button type="button" id="vClose">Close</button></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script>
@@ -177,6 +183,9 @@ textarea::placeholder{color:var(--muted)}
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
   let photos = [];
+  let recent = []; // photos held for a while in case you want to keep them: {id, src, text, t}
+  const RECENT_MAX = 12, RECENT_MS = 24 * 3600 * 1000;
+  const saveRecent = () => db.set('recent', recent);
   let saveT;
   const saveText = now => { clearTimeout(saveT); if (now === true) return db.set('text', box.value); saveT = setTimeout(() => db.set('text', box.value), 300); };
   addEventListener('pagehide', () => db.set('text', box.value));
@@ -201,19 +210,42 @@ textarea::placeholder{color:var(--muted)}
     if (photos.length) parts.push(photos.length + (photos.length === 1 ? ' photo kept' : ' photos kept'));
     $('stats').textContent = parts.length ? parts.join(' · ') : 'Empty';
     const empty = !t && !photos.length;
-    $('copyBtn').disabled = empty; $('clearBtn').disabled = empty;
+    $('copyBtn').disabled = empty; $('clearBtn').disabled = empty && !recent.length;
+  }
+  let viewing = null;
+  function openViewer(src, rec) {
+    viewing = rec || null;
+    $('viewerImg').src = src;
+    $('vKeep').classList.toggle('hidden', !rec);
+    $('viewer').classList.remove('hidden');
   }
   function renderPhotos() {
     const el = $('photos'); el.innerHTML = '';
-    el.classList.toggle('hidden', !photos.length);
-    photos.forEach(src => {
-      const im = document.createElement('img'); im.src = src; im.alt = 'Kept photo';
-      im.onclick = () => { $('viewerImg').src = src; $('viewer').classList.remove('hidden'); };
-      el.appendChild(im);
-    });
+    const any = photos.length || recent.length;
+    el.classList.toggle('hidden', !any); $('photohead').classList.toggle('hidden', !any);
+    const add = (src, cls, label, onTap) => {
+      const d = document.createElement('div'); d.className = 'thumb ' + cls;
+      const im = document.createElement('img'); im.src = src; im.alt = label; im.onclick = onTap;
+      const tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = label;
+      d.append(im, tg); el.appendChild(d);
+    };
+    photos.forEach(src => add(src, 'kept', 'Kept', () => openViewer(src)));
+    recent.slice().reverse().forEach(r => add(r.src, 'recent', 'Keep?', () => openViewer(r.src, r)));
     updateStats();
   }
-  $('viewer').onclick = () => $('viewer').classList.add('hidden');
+  function keepRecent(r) {
+    recent = recent.filter(x => x.id !== r.id); photos.push(r.src);
+    // a kept photo carries no text: take its text back out if it is still in the box unchanged
+    let removed = false;
+    if (r.text && box.value.includes(r.text)) {
+      box.value = box.value.replace(r.text, '').replace(/\n{3,}/g, '\n\n').trim(); removed = true; saveText(true);
+    }
+    saveRecent(); savePhotos(); renderPhotos();
+    toast(removed ? 'Photo kept, its text taken out' : 'Photo kept');
+  }
+  $('vKeep').onclick = e => { e.stopPropagation(); if (viewing) keepRecent(viewing); $('viewer').classList.add('hidden'); };
+  $('vClose').onclick = () => $('viewer').classList.add('hidden');
+  $('viewer').onclick = e => { if (e.target.id === 'viewer') $('viewer').classList.add('hidden'); };
   box.addEventListener('input', () => { saveText(); updateStats(); });
 
   // ---------- settings ----------
@@ -355,6 +387,9 @@ textarea::placeholder{color:var(--muted)}
         let text = cleanFromBlocks(data);
         if (!text) text = cleanFromText(data.text);
         if (text) appendText(text); else toast('No text found in that photo');
+        recent.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), src: draw(img, 1200, false).toDataURL('image/jpeg', 0.75), text, t: Date.now() });
+        if (recent.length > RECENT_MAX) recent = recent.slice(-RECENT_MAX);
+        saveRecent(); renderPhotos();
       }
     } catch (e) {
       toast((e && e.message) || 'Could not read that photo');
@@ -413,22 +448,17 @@ textarea::placeholder{color:var(--muted)}
     } catch (e) { if (e && e.name !== 'AbortError') copyAll(); }
   };
 
-  $('gptBtn').onclick = async () => {
-    const ok = await copyAll(true);
-    if (ok) toast(photos.length ? 'Text copied. Paste it in ChatGPT (use Share all to send photos).' : 'Copied. Paste it in ChatGPT.');
-    setTimeout(() => { location.href = 'https://chatgpt.com/'; }, 600);
-  };
-
   $('clearBtn').onclick = () => {
-    const snap = { text: box.value, photos: photos.slice() };
-    if (!snap.text.trim() && !snap.photos.length) return;
-    box.value = ''; photos = []; saveText(true); savePhotos(); renderPhotos();
-    toast('Cleared', 'Undo', () => { box.value = snap.text; photos = snap.photos; saveText(true); savePhotos(); renderPhotos(); });
+    const snap = { text: box.value, photos: photos.slice(), recent: recent.slice() };
+    if (!snap.text.trim() && !snap.photos.length && !snap.recent.length) return;
+    box.value = ''; photos = []; recent = []; saveText(true); savePhotos(); saveRecent(); renderPhotos();
+    toast('Cleared', 'Undo', () => { box.value = snap.text; photos = snap.photos; recent = snap.recent; saveText(true); savePhotos(); saveRecent(); renderPhotos(); });
   };
 
   // ---------- start ----------
   (async () => {
-    const [t, p] = await Promise.all([db.get('text'), db.get('photos')]);
+    const [t, p, r] = await Promise.all([db.get('text'), db.get('photos'), db.get('recent')]);
+    if (Array.isArray(r)) { recent = r.filter(x => Date.now() - x.t < RECENT_MS); if (recent.length !== r.length) saveRecent(); }
     if (typeof t === 'string' && !box.value) box.value = t;
     if (Array.isArray(p)) photos = p;
     renderPhotos();
@@ -437,7 +467,7 @@ textarea::placeholder{color:var(--muted)}
   setTimeout(() => getWorker().catch(() => {}), 300);
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
-  window.__snaptext = { addFiles, get photos() { return photos; } };
+  window.__snaptext = { addFiles, keepRecent, get photos() { return photos; }, get recent() { return recent; } };
 })();
 </script>
 </body>

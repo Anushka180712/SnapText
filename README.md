@@ -12,7 +12,8 @@ SnapText is a small phone web app. Tap the camera, take a photo, tap **Use Photo
 - Clean, readable text: broken lines are joined back into sentences, bullet lists stay as lists, stray symbols are dropped.
 - Shoot back-to-back: photos are read one after another in the background, a badge shows how many are waiting.
 - Photos are not saved unless **Keep the photo too** is on for that shot (or "Keep photos by default" in Settings). A kept photo stays as a photo only, and its text is not added to the box.
-- **Copy all** copies the whole text (plus kept photos, for apps that accept them). **Share all** sends text and kept photos to any app, ChatGPT included. **Copy & open ChatGPT** copies and jumps to ChatGPT. **Clear all** empties everything, with Undo.
+- Changed your mind? Your last few photos stay as faded "Keep?" thumbnails for 24 hours (or until Clear all). Tap one and choose **Keep this photo**; its text is taken out of the box. Photos you never keep are thrown away.
+- **Copy all** copies the whole text (plus kept photos, for apps that accept them). **Share all** sends text and kept photos to any app, ChatGPT included. **Clear all** empties everything, with Undo.
 - Text is read on the phone itself (Tesseract.js), nothing is uploaded. Works offline after the first use.
 - Languages: English, Hindi, English + Hindi, French, German, Spanish (Settings).
 
