@@ -2,7 +2,7 @@
 
 Take a photo, keep only the text.
 
-SnapText is a small phone web app. Tap the camera, take a photo, tap **Use Photo**, and the text lands in one big text box while the photo is thrown away. Take as many photos as you like: each one adds its text below the last, in order. The photo is kept only when you switch on **Keep the photo too** before shooting.
+SnapText is a small phone web app. Tap the camera, take a photo, tap **Use Photo**, and the text lands in one big text box while the photo is thrown away. Take as many photos as you like: each one adds its text below the last, in order. The photo is kept only when you switch on **Keep the photo too** before shooting, and then it stays as a photo only, without adding text.
 
 **Open it:** https://anushka180712.github.io/SnapText/
 
@@ -11,7 +11,7 @@ SnapText is a small phone web app. Tap the camera, take a photo, tap **Use Photo
 - One running text box. Every photo adds its text to the end; you can type, fix or delete anything in it.
 - Clean, readable text: broken lines are joined back into sentences, bullet lists stay as lists, stray symbols are dropped.
 - Shoot back-to-back: photos are read one after another in the background, a badge shows how many are waiting.
-- Photos are not saved unless **Keep the photo too** is on for that shot (or "Keep photos by default" in Settings).
+- Photos are not saved unless **Keep the photo too** is on for that shot (or "Keep photos by default" in Settings). A kept photo stays as a photo only, and its text is not added to the box.
 - **Copy all** copies the whole text (plus kept photos, for apps that accept them). **Share all** sends text and kept photos to any app, ChatGPT included. **Copy & open ChatGPT** copies and jumps to ChatGPT. **Clear all** empties everything, with Undo.
 - Text is read on the phone itself (Tesseract.js), nothing is uploaded. Works offline after the first use.
 - Languages: English, Hindi, English + Hindi, French, German, Spanish (Settings).

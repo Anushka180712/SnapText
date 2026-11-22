@@ -100,7 +100,7 @@ textarea::placeholder{color:var(--muted)}
       <span id="stats">Empty</span>
       <span class="chip hidden" id="working"><span class="spin"></span><span id="workingText">Reading…</span></span>
     </div>
-    <textarea id="box" spellcheck="true" placeholder="Tap the camera and take a photo.&#10;&#10;The text appears here and the photo is thrown away. Every new photo adds its text below the last one. You can type, fix or delete anything here."></textarea>
+    <textarea id="box" spellcheck="true" placeholder="Tap the camera and take a photo.&#10;&#10;The text appears here and the photo is thrown away. Every new photo adds its text below the last one. With “Keep the photo too” on, the photo is kept instead and no text is added. You can type, fix or delete anything here."></textarea>
     <div class="photos hidden" id="photos" aria-label="Kept photos"></div>
   </section>
 </main>
@@ -345,13 +345,17 @@ textarea::placeholder{color:var(--muted)}
     const { file, keepIt } = current;
     try {
       const img = await loadImage(file);
-      const w = await getWorker();
-      const { data } = await w.recognize(draw(img, 2000, true), {}, { text: true, blocks: true });
-      let text = cleanFromBlocks(data);
-      if (!text) text = cleanFromText(data.text);
-      if (keepIt) { photos.push(draw(img, 1400, false).toDataURL('image/jpeg', 0.8)); savePhotos(); renderPhotos(); }
-      if (text) appendText(text);
-      else toast(keepIt ? 'No text found. Photo kept.' : 'No text found in that photo');
+      if (keepIt) {
+        // Keep-photo shots stay as a photo only: no text is added to the box.
+        photos.push(draw(img, 1400, false).toDataURL('image/jpeg', 0.8)); savePhotos(); renderPhotos();
+        toast('Photo kept (no text added)');
+      } else {
+        const w = await getWorker();
+        const { data } = await w.recognize(draw(img, 2000, true), {}, { text: true, blocks: true });
+        let text = cleanFromBlocks(data);
+        if (!text) text = cleanFromText(data.text);
+        if (text) appendText(text); else toast('No text found in that photo');
+      }
     } catch (e) {
       toast((e && e.message) || 'Could not read that photo');
     } finally {
