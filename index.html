@@ -295,63 +295,138 @@ textarea::placeholder{color:var(--muted)}
     return c;
   }
 
-  // ---------- text cleanup: make OCR output read like Lens ----------
-  const looksJunk = (s, conf) => {
-    const t = s.trim(); if (!t) return true;
-    const letters = (t.match(/[\p{L}\p{N}]/gu) || []).length;
-    if (letters === 0) return true;
-    if (letters / t.length < 0.45 && t.length < 25) return true;  // mostly symbols
-    if (conf !== undefined && conf < 45 && t.length < 12) return true; // short, low-confidence noise
-    return false;
-  };
+  // ---------- photo prep for reading: even out shadows, boost contrast, sensible size ----------
+  function prepForOcr(img) {
+    const long = Math.max(img.naturalWidth, img.naturalHeight);
+    const s = long > 2200 ? 2200 / long : (long < 1400 ? 1400 / long : 1);
+    const w = Math.round(img.naturalWidth * s), h = Math.round(img.naturalHeight * s);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.filter = 'grayscale(1) blur(0.6px)'; g.drawImage(img, 0, 0, w, h); g.filter = 'none';
+    // estimate the lighting with a heavily blurred small copy, then divide it out
+    const bw = Math.max(8, Math.round(w / 24)), bh = Math.max(8, Math.round(h / 24));
+    const bc = document.createElement('canvas'); bc.width = bw; bc.height = bh;
+    const bg = bc.getContext('2d', { willReadFrequently: true });
+    bg.filter = 'grayscale(1) blur(2px)'; bg.drawImage(img, 0, 0, bw, bh);
+    const big = document.createElement('canvas'); big.width = w; big.height = h;
+    const gg = big.getContext('2d', { willReadFrequently: true });
+    gg.imageSmoothingQuality = 'high'; gg.drawImage(bc, 0, 0, w, h);
+    const px = g.getImageData(0, 0, w, h), bp = gg.getImageData(0, 0, w, h).data, d = px.data;
+    for (let i = 0; i < d.length; i += 4) {
+      let v = d[i] / Math.max(1, bp[i]) * 255;      // flat-field: paper becomes ~white
+      v = (v - 25) * 255 / 210;                       // stretch contrast
+      v = v < 0 ? 0 : v > 255 ? 255 : v;
+      d[i] = d[i + 1] = d[i + 2] = v;
+    }
+    g.putImageData(px, 0, 0);
+    return c;
+  }
+
+  // ---------- text cleanup: keep only meaningful text, like Lens ----------
+  const VOWEL = /[aeiouyAEIOUY]/;
+  const LATIN = /^[A-Za-z]/;
+  const median = a => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+  const core = t => t.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+  function isRealWord(t) {
+    const c = core(t);
+    if (c.length < 2) return /^[aAI]$/.test(c);
+    if (!/^[\p{L}][\p{L}\p{M}'’.-]*$/u.test(c)) return false;
+    if (LATIN.test(c)) {
+      if (!VOWEL.test(c) && c.length > 1 && !/^[A-Z]{2,5}$/.test(c)) return false; // no vowels: junk unless an acronym
+      if (/[a-z][A-Z]/.test(c.slice(1)) && !/^Mc|^Mac/.test(c)) return false;     // rAnDoM case
+      if (/(.)\1\1/.test(c)) return false;                                             // "eee"
+    }
+    return true;
+  }
+  const isNumberish = t => /\d/.test(t) && /^[\p{Sc}#(+]?[\d][\d.,:/%\-–)+]*[\p{L}]{0,3}[.,;:)]?$/u.test(t);
+  const BULLET = /^[•*·●▪◦\-–]$/;
+
+  function cleanLineWords(words) {
+    if (!words.length) return [];
+    const hs = words.map(w => w.bbox.y1 - w.bbox.y0);
+    const h = median(hs) || 10;
+    // split the line where there is a big gap (text from a neighbouring page, a margin note, an icon)
+    const segs = [[words[0]]];
+    for (let i = 1; i < words.length; i++) {
+      const gap = words[i].bbox.x0 - words[i - 1].bbox.x1;
+      if (gap > h * 1.8) segs.push([]);
+      segs[segs.length - 1].push(words[i]);
+    }
+    const out = [];
+    for (const raw of segs) {
+      // re-join split words like "V illage" or "c alled" before judging them
+      const seg = [];
+      for (const w of raw) {
+        const prev = seg[seg.length - 1], t = w.text.trim();
+        if (prev && /^[A-Za-z¢]$/.test(prev.text.trim()) && !/^[aAI]$/.test(prev.text.trim()) && /^[a-z]{2,}/.test(t) && (w.bbox.x0 - prev.bbox.x1) < h * 0.6) {
+          const L = prev.text.trim() === '¢' ? 'c' : prev.text.trim();
+          seg[seg.length - 1] = { text: L + t, confidence: Math.min(prev.confidence, w.confidence) + 15, bbox: { x0: prev.bbox.x0, y0: Math.min(prev.bbox.y0, w.bbox.y0), x1: w.bbox.x1, y1: Math.max(prev.bbox.y1, w.bbox.y1) } };
+        } else seg.push(w);
+      }
+      let ws = [];
+      for (let i = 0; i < seg.length; i++) {
+        const w = seg[i], t = w.text.trim();
+        if (!t) continue;
+        const real = isRealWord(t), num = isNumberish(t);
+        if (BULLET.test(t) && i === 0 && seg.length > 1) { ws.push({ t: '•', w, real: false }); continue; }
+        if (!real && !num && !/^[&@%+=/]$/.test(t)) { if (w.confidence < 85 || !/[\p{L}\p{N}]/u.test(t)) continue; }
+        if (w.confidence < 45 && !(real && core(t).length >= 4)) continue;
+        ws.push({ t, w, real: real || num });
+      }
+      if (!ws.length) continue;
+      const realWs = ws.filter(x => x.real && x.w.confidence >= 60 && core(x.t).length >= 2);
+      const realChars = realWs.reduce((a, x) => a + core(x.t).length, 0);
+      const allChars = ws.reduce((a, x) => a + x.t.length, 0);
+      const conf = ws.reduce((a, x) => a + x.w.confidence, 0) / ws.length;
+      const digits = ws.map(x => x.t).join('').replace(/\D/g, '').length;
+      const good =
+        (realWs.length >= 2 && conf >= 55 && realChars / allChars >= 0.5) ||
+        (realWs.length === 1 && ws.length <= 3 && core(realWs[0].t).length >= 4 && realWs[0].w.confidence >= 75) ||
+        (digits >= 3 && conf >= 70);
+      if (good) out.push(...ws);
+    }
+    return out;
+  }
+
   const tidy = s => s
-    .replace(/^[*·●▪◦]\s+/, '• ')
-    .replace(/[|¦]{1,}(?=\s|$)/g, '')
     .replace(/[“”]/g, '"').replace(/[‘’]/g, "'")
     .replace(/\s+([,.;:!?])/g, '$1')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
-  const isListLine = s => /^\s*([-•*·●▪◦]|\(?\d{1,3}[.)]|[a-zA-Z][.)])\s+/.test(s);
-
-  // lines: [{text, x0, x1}] ; a line is joined to the next only when it ran to the right edge (it was wrapped)
-  function joinParagraph(lines) {
-    if (!joinLines.checked) return lines.map(l => l.text).join('\n');
-    const left = Math.min(...lines.map(l => l.x0)), right = Math.max(...lines.map(l => l.x1));
-    const width = Math.max(1, right - left);
-    let out = '';
-    lines.forEach((ln, i) => {
-      if (i === 0) { out = ln.text; return; }
-      const prev = lines[i - 1];
-      const wrapped = prev.x1 >= right - width * 0.15 && (lines.length >= 3 || /^[a-z(,]/.test(ln.text));
-      const keepBreak = !wrapped || isListLine(ln.text) || /:$/.test(prev.text);
-      if (keepBreak) out += '\n' + ln.text;
-      else if (/[A-Za-z]-$/.test(out)) out = out.slice(0, -1) + ln.text;   // re-join hyphenated words
-      else out += ' ' + ln.text;
-    });
-    return out;
-  }
+  const isListLine = s => /^\s*(•|\(?\d{1,3}[.)]|[a-zA-Z][.)])\s+/.test(s);
 
   function cleanFromBlocks(data) {
-    const paras = [];
-    (data.blocks || []).forEach(b => (b.paragraphs || []).forEach(p => {
+    const out = [];
+    for (const b of (data.blocks || [])) {
+      // gather good lines of this block with their geometry
       const lines = [];
-      (p.lines || []).forEach(l => {
-        const words = (l.words || []).filter(w => w.confidence >= 30 || /[\p{L}\p{N}]{3,}/u.test(w.text) || /^[•*·●▪◦-]$/.test(w.text));
-        const text = tidy(words.map(w => w.text).join(' '));
-        const conf = words.length ? words.reduce((a, w) => a + w.confidence, 0) / words.length : 0;
-        if (!looksJunk(text, conf)) lines.push({ text, x0: l.bbox ? l.bbox.x0 : 0, x1: l.bbox ? l.bbox.x1 : 1 });
-      });
-      if (lines.length) paras.push({ text: joinParagraph(lines), single: lines.length === 1 });
-    }));
-    let out = '';
-    paras.forEach((p, i) => { out += i === 0 ? p.text : ((p.single && paras[i - 1].single) ? '\n' : '\n\n') + p.text; });
-    return out;
-  }
-  function cleanFromText(t) {
-    return (t || '').split(/\n\s*\n/).map(p => {
-      const lines = p.split('\n').map(tidy).filter(l => !looksJunk(l));
-      return lines.join('\n');
-    }).filter(Boolean).join('\n\n');
+      for (const p of (b.paragraphs || [])) for (const l of (p.lines || [])) {
+        const ws = cleanLineWords(l.words || []);
+        if (!ws.length) continue;
+        const bx = ws.map(x => x.w.bbox);
+        const cy = bx.reduce((a, q) => a + (q.y0 + q.y1) / 2, 0) / bx.length;
+        const hh = median(bx.map(q => q.y1 - q.y0));
+        lines.push({ text: tidy(ws.map(x => x.t).join(' ')), x0: Math.min(...bx.map(q => q.x0)), x1: Math.max(...bx.map(q => q.x1)), y0: cy - hh / 2, y1: cy + hh / 2 });
+      }
+      if (!lines.length) continue;
+      const left = Math.min(...lines.map(l => l.x0)), right = Math.max(...lines.map(l => l.x1));
+      const width = Math.max(1, right - left);
+      const lh = median(lines.map(l => l.y1 - l.y0)) || 10;
+      const steps = []; for (let i = 1; i < lines.length; i++) steps.push(lines[i].y0 - lines[i - 1].y0);
+      const step = median(steps) || lh * 1.4;
+      let text = lines[0].text;
+      for (let i = 1; i < lines.length; i++) {
+        const prev = lines[i - 1], ln = lines[i];
+        const newPara = (ln.y0 - prev.y0) > step * 1.45 || (ln.y1 - ln.y0) > lh * 1.4 || (prev.y1 - prev.y0) > lh * 1.4;
+        const wrapped = prev.x1 >= right - width * 0.12 && (lines.length >= 3 || /^[a-z(,]/.test(ln.text));
+        if (newPara) text += '\n\n' + ln.text;
+        else if (!joinLines.checked || !wrapped || isListLine(ln.text) || /:$/.test(prev.text)) text += '\n' + ln.text;
+        else if (/[A-Za-z]-$/.test(text)) text = text.slice(0, -1) + ln.text;
+        else text += ' ' + ln.text;
+      }
+      out.push(text);
+    }
+    return out.join('\n\n').replace(/\n{3,}/g, '\n\n').trim();
   }
 
   // ---------- capture queue: shoot as many as you like, read one after another ----------
@@ -383,9 +458,8 @@ textarea::placeholder{color:var(--muted)}
         toast('Photo kept (no text added)');
       } else {
         const w = await getWorker();
-        const { data } = await w.recognize(draw(img, 2000, true), {}, { text: true, blocks: true });
-        let text = cleanFromBlocks(data);
-        if (!text) text = cleanFromText(data.text);
+        const { data } = await w.recognize(prepForOcr(img), {}, { text: true, blocks: true });
+        const text = cleanFromBlocks(data);
         if (text) appendText(text); else toast('No text found in that photo');
         recent.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), src: draw(img, 1200, false).toDataURL('image/jpeg', 0.75), text, t: Date.now() });
         if (recent.length > RECENT_MAX) recent = recent.slice(-RECENT_MAX);

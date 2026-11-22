@@ -9,7 +9,7 @@ SnapText is a small phone web app. Tap the camera, take a photo, tap **Use Photo
 ## What it does
 
 - One running text box. Every photo adds its text to the end; you can type, fix or delete anything in it.
-- Clean, readable text: broken lines are joined back into sentences, bullet lists stay as lists, stray symbols are dropped.
+- Clean, readable text: shadows are evened out before reading, low-confidence bits, stray symbols and text from the edges of the photo (a neighbouring page, a logo) are dropped, broken lines are joined back into sentences, and bullet lists stay as lists.
 - Shoot back-to-back: photos are read one after another in the background, a badge shows how many are waiting.
 - Photos are not saved unless **Keep the photo too** is on for that shot (or "Keep photos by default" in Settings). A kept photo stays as a photo only, and its text is not added to the box.
 - Changed your mind? Your last few photos stay as faded "Keep?" thumbnails for 24 hours (or until Clear all). Tap one and choose **Keep this photo**; its text is taken out of the box. Photos you never keep are thrown away.
