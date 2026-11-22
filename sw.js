@@ -1,5 +1,5 @@
 // SnapText service worker: app shell + OCR engine cached for offline use.
-const CACHE = 'snaptext-v4';
+const CACHE = 'snaptext-v5';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -14,7 +14,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // Same-origin pages: network first so updates arrive, cache as fallback.
   if (url.origin === location.origin) {
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r; })
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r; })
       .catch(() => caches.match(req).then(r => r || caches.match('index.html'))));
     return;
   }

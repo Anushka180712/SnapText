@@ -296,22 +296,33 @@ textarea::placeholder{color:var(--muted)}
   }
 
   // ---------- photo prep for reading: even out shadows, boost contrast, sensible size ----------
+  // (done with plain pixel maths, so it behaves the same on iPhone Safari, which ignores canvas filters)
   function prepForOcr(img) {
     const long = Math.max(img.naturalWidth, img.naturalHeight);
     const s = long > 2200 ? 2200 / long : (long < 1400 ? 1400 / long : 1);
     const w = Math.round(img.naturalWidth * s), h = Math.round(img.naturalHeight * s);
     const c = document.createElement('canvas'); c.width = w; c.height = h;
     const g = c.getContext('2d', { willReadFrequently: true });
-    g.filter = 'grayscale(1) blur(0.6px)'; g.drawImage(img, 0, 0, w, h); g.filter = 'none';
-    // estimate the lighting with a heavily blurred small copy, then divide it out
-    const bw = Math.max(8, Math.round(w / 24)), bh = Math.max(8, Math.round(h / 24));
-    const bc = document.createElement('canvas'); bc.width = bw; bc.height = bh;
-    const bg = bc.getContext('2d', { willReadFrequently: true });
-    bg.filter = 'grayscale(1) blur(2px)'; bg.drawImage(img, 0, 0, bw, bh);
-    const big = document.createElement('canvas'); big.width = w; big.height = h;
-    const gg = big.getContext('2d', { willReadFrequently: true });
-    gg.imageSmoothingQuality = 'high'; gg.drawImage(bc, 0, 0, w, h);
-    const px = g.getImageData(0, 0, w, h), bp = gg.getImageData(0, 0, w, h).data, d = px.data;
+    g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, w, h);
+    const px = g.getImageData(0, 0, w, h), d = px.data;
+    // grayscale, and find out whether the text is light on a dark background (dark-mode screens, blackboards)
+    let sum = 0;
+    for (let i = 0; i < d.length; i += 4) { const v = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = v; sum += v; }
+    // light 3x3 smoothing to calm camera grain (Safari can't do canvas blur filters)
+    { const src = new Float32Array(w * h); for (let i = 0, j = 0; j < src.length; i += 4, j++) src[j] = d[i];
+      for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+        const k = y * w + x;
+        const v = (src[k] * 4 + src[k - 1] * 2 + src[k + 1] * 2 + src[k - w] * 2 + src[k + w] * 2 + src[k - w - 1] + src[k - w + 1] + src[k + w - 1] + src[k + w + 1]) / 16;
+        const i = k * 4; d[i] = d[i + 1] = d[i + 2] = v;
+      } }
+    const invert = sum / (w * h) < 105;
+    if (invert) for (let i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = 255 - d[i];
+    g.putImageData(px, 0, 0);
+    // estimate the lighting from a tiny, smoothed copy, then divide it out so shadows disappear
+    const small = (src, sw, sh) => { const k = document.createElement('canvas'); k.width = sw; k.height = sh; const kg = k.getContext('2d', { willReadFrequently: true }); kg.imageSmoothingQuality = 'high'; kg.drawImage(src, 0, 0, sw, sh); return k; };
+    const s1 = small(c, Math.max(16, Math.round(w / 8)), Math.max(16, Math.round(h / 8)));
+    const s2 = small(s1, Math.max(8, Math.round(w / 32)), Math.max(8, Math.round(h / 32)));
+    const bgc = small(s2, w, h), bp = bgc.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
     for (let i = 0; i < d.length; i += 4) {
       let v = d[i] / Math.max(1, bp[i]) * 255;      // flat-field: paper becomes ~white
       v = (v - 25) * 255 / 210;                       // stretch contrast
@@ -331,6 +342,7 @@ textarea::placeholder{color:var(--muted)}
     const c = core(t);
     if (c.length < 2) return /^[aAI]$/.test(c);
     if (!/^[\p{L}][\p{L}\p{M}'’.-]*$/u.test(c)) return false;
+    if (c.length <= 2 && !/^([a-z]+|[A-Z]+|[A-Z][a-z])$/.test(c) && LATIN.test(c)) return false;   // "oO"
     if (LATIN.test(c)) {
       if (!VOWEL.test(c) && c.length > 1 && !/^[A-Z]{2,5}$/.test(c)) return false; // no vowels: junk unless an acronym
       if (/[a-z][A-Z]/.test(c.slice(1)) && !/^Mc|^Mac/.test(c)) return false;     // rAnDoM case
@@ -341,7 +353,9 @@ textarea::placeholder{color:var(--muted)}
   const isNumberish = t => /\d/.test(t) && /^[\p{Sc}#(+]?[\d][\d.,:/%\-–)+]*[\p{L}]{0,3}[.,;:)]?$/u.test(t);
   const BULLET = /^[•*·●▪◦\-–]$/;
 
-  function cleanLineWords(words) {
+  const STRICT = { word: 45, line: 55, real: 60, single: 75, num: 70, sym: 85 };
+  const LOOSE = { word: 25, line: 38, real: 42, single: 60, num: 50, sym: 70 };
+  function cleanLineWords(words, T) {
     if (!words.length) return [];
     const hs = words.map(w => w.bbox.y1 - w.bbox.y0);
     const h = median(hs) || 10;
@@ -369,20 +383,21 @@ textarea::placeholder{color:var(--muted)}
         if (!t) continue;
         const real = isRealWord(t), num = isNumberish(t);
         if (BULLET.test(t) && i === 0 && seg.length > 1) { ws.push({ t: '•', w, real: false }); continue; }
-        if (!real && !num && !/^[&@%+=/]$/.test(t)) { if (w.confidence < 85 || !/[\p{L}\p{N}]/u.test(t)) continue; }
-        if (w.confidence < 45 && !(real && core(t).length >= 4)) continue;
+        if (i === 0 && seg.length > 2 && core(t).length <= 2 && !/^[aAI]$/.test(core(t)) && !/\d/.test(t) && w.confidence < 75) continue;  // stray bit before a line (logo, icon)
+        if (!real && !num && !/^[&@%+=/]$/.test(t)) { if (w.confidence < T.sym || !/[\p{L}\p{N}]/u.test(t)) continue; }
+        if (w.confidence < T.word && !(real && core(t).length >= 4)) continue;
         ws.push({ t, w, real: real || num });
       }
       if (!ws.length) continue;
-      const realWs = ws.filter(x => x.real && x.w.confidence >= 60 && core(x.t).length >= 2);
+      const realWs = ws.filter(x => x.real && x.w.confidence >= T.real && core(x.t).length >= 2);
       const realChars = realWs.reduce((a, x) => a + core(x.t).length, 0);
       const allChars = ws.reduce((a, x) => a + x.t.length, 0);
       const conf = ws.reduce((a, x) => a + x.w.confidence, 0) / ws.length;
       const digits = ws.map(x => x.t).join('').replace(/\D/g, '').length;
       const good =
-        (realWs.length >= 2 && conf >= 55 && realChars / allChars >= 0.5) ||
-        (realWs.length === 1 && ws.length <= 3 && core(realWs[0].t).length >= 4 && realWs[0].w.confidence >= 75) ||
-        (digits >= 3 && conf >= 70);
+        (realWs.length >= 2 && conf >= T.line && realChars / allChars >= 0.5) ||
+        (realWs.length === 1 && ws.length <= 3 && core(realWs[0].t).length >= 4 && realWs[0].w.confidence >= T.single) ||
+        (digits >= 3 && conf >= T.num);
       if (good) out.push(...ws);
     }
     return out;
@@ -395,13 +410,13 @@ textarea::placeholder{color:var(--muted)}
     .trim();
   const isListLine = s => /^\s*(•|\(?\d{1,3}[.)]|[a-zA-Z][.)])\s+/.test(s);
 
-  function cleanFromBlocks(data) {
+  function cleanFromBlocks(data, T) {
     const out = [];
     for (const b of (data.blocks || [])) {
       // gather good lines of this block with their geometry
       const lines = [];
       for (const p of (b.paragraphs || [])) for (const l of (p.lines || [])) {
-        const ws = cleanLineWords(l.words || []);
+        const ws = cleanLineWords(l.words || [], T);
         if (!ws.length) continue;
         const bx = ws.map(x => x.w.bbox);
         const cy = bx.reduce((a, q) => a + (q.y0 + q.y1) / 2, 0) / bx.length;
@@ -427,6 +442,32 @@ textarea::placeholder{color:var(--muted)}
       out.push(text);
     }
     return out.join('\n\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  // Common English words: real sentences are full of them, OCR noise almost never is.
+  const COMMON = new Set(('the of and to a in is it you that he was for on are with as i his they be at one have this from or had by not word but what some we can out other were all there when up use your how said an each she which do their time if will way about many then them write would like so these her long make thing see him two has look more day could go come did number sound no most people my over know water than call first who may down side been now find any new work part take get place made live where after back little only round man year came show every good me give our under name very through just form sentence great think say help low line differ turn cause much mean before move right boy old too same tell does set three want air well also play small end put home read hand port large spell add even land here must big high such follow act why ask men change went light kind off need house picture try us again animal point mother world near build self earth father please thank today tomorrow meeting date am pm per will shall should into its our been being has more less upto via etc dear hi hello regards').split(' '));
+  function lineLooksEnglish(line) {
+    const toks = line.toLowerCase().match(/[a-z']+/g) || [];
+    if (toks.length < 5) return true;               // too short to judge (titles, list items)
+    const hits = toks.filter(t => COMMON.has(t)).length;
+    return hits / toks.length >= 0.2;
+  }
+  const count = t => (t.match(/[\p{L}\p{N}]{2,}/gu) || []).length;
+
+  // Pick how strict to be: strict normally, looser when strict would throw away most of the real words.
+  // Never return obvious noise: an empty result is better than rubbish.
+  function cleanText(data) {
+    const all = [];
+    (data.blocks || []).forEach(b => (b.paragraphs || []).forEach(p => (p.lines || []).forEach(l => (l.words || []).forEach(w => all.push(w)))));
+    const realCount = all.filter(w => w.confidence >= 60 && isRealWord(w.text) && core(w.text).length >= 2).length;
+    const english = /eng/.test(lang.value) && !/hin/.test(lang.value);
+    const guard = t => english ? t.split('\n').filter(lineLooksEnglish).join('\n').replace(/\n{3,}/g, '\n\n').trim() : t;
+    const strict = guard(cleanFromBlocks(data, STRICT));
+    const noisy = t => count(t) < 3 && all.length > 6;   // a couple of words out of lots of noise: not readable
+    if (count(strict) >= realCount * 0.6) return noisy(strict) ? '' : strict;
+    const loose = guard(cleanFromBlocks(data, LOOSE));
+    const best = count(loose) > count(strict) ? loose : strict;
+    return noisy(best) ? '' : best;
   }
 
   // ---------- capture queue: shoot as many as you like, read one after another ----------
@@ -458,9 +499,14 @@ textarea::placeholder{color:var(--muted)}
         toast('Photo kept (no text added)');
       } else {
         const w = await getWorker();
-        const { data } = await w.recognize(prepForOcr(img), {}, { text: true, blocks: true });
-        const text = cleanFromBlocks(data);
-        if (text) appendText(text); else toast('No text found in that photo');
+        let { data } = await w.recognize(prepForOcr(img), {}, { text: true, blocks: true });
+        let text = cleanText(data);
+        if (!text) {   // the clean-up can hurt some photos: try once more with the photo as it is
+          setWorking('Trying again…');
+          ({ data } = await w.recognize(draw(img, 2200, false), {}, { text: true, blocks: true }));
+          text = cleanText(data);
+        }
+        if (text) appendText(text); else toast('Couldn’t read that clearly. Try closer, in good light.');
         recent.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), src: draw(img, 1200, false).toDataURL('image/jpeg', 0.75), text, t: Date.now() });
         if (recent.length > RECENT_MAX) recent = recent.slice(-RECENT_MAX);
         saveRecent(); renderPhotos();
